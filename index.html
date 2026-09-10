@@ -9,57 +9,53 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <!-- Monetag SDK -->
-<script id="monetag-script" src="https://libtl.com/sdk.js" data-zone="9841479" data-sdk="show_9841479"></script>
+<script src="//libtl.com/sdk.js" data-zone="9841479" data-sdk="show_9841479"></script>
 
 <style>
-  :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: #121212;
     color: #ffffff;
-    padding: 16px;
+    padding: 20px;
     text-align: center;
   }
-  h2 { margin-top: 5px; color: #ff8c00; font-size: 22px; }
   .card {
     background: #1e1e1e;
-    border-radius: 14px;
-    padding: 16px;
-    max-width: 380px;
-    margin: 10px auto;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 360px;
+    margin: 20px auto;
     border: 1px solid #333;
   }
+  h2 { margin: 0 0 10px 0; color: #ff8c00; font-size: 24px; }
+  .coins { font-size: 26px; font-weight: bold; margin: 15px 0; color: #ff8c00; }
   .btn {
     width: 100%;
-    padding: 13px;
-    margin: 8px 0;
-    font-size: 15px;
+    padding: 15px;
+    margin: 10px 0;
+    font-size: 16px;
     font-weight: bold;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
+    transition: 0.1s transform;
   }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-orange { background: #ff8c00; color: #121212; }
-  .btn-green { background: #10b981; color: #ffffff; }
-  #coins { font-size: 24px; font-weight: bold; margin: 10px 0; color: #ff8c00; }
-  
-  .diag-box {
+  .btn:active { transform: scale(0.98); }
+  .btn-interstitial { background: #ff8c00; color: #121212; }
+  .btn-popup { background: #10b981; color: #ffffff; }
+  #status {
     margin-top: 15px;
-    text-align: left;
-    background: #000000;
     padding: 12px;
     border-radius: 8px;
-    font-family: monospace;
-    font-size: 12px;
-    color: #00ff66;
-    border: 1px solid #222;
-    max-height: 250px;
-    overflow-y: auto;
+    background: #282828;
+    font-size: 13px;
+    min-height: 40px;
     white-space: pre-wrap;
-    word-break: break-all;
+    word-break: break-word;
+    border: 1px solid #444;
+    color: #00ffcc;
   }
 </style>
 </head>
@@ -67,124 +63,88 @@
 
 <div class="card">
   <h2>🎁 Watch & Earn</h2>
-  <div id="coins">কয়েন: <span id="coinCount">0</span></div>
+  <div class="coins">কয়েন: <span id="coinCount">0</span></div>
 
-  <button class="btn btn-orange" id="interstitialBtn">🎬 Rewarded Interstitial</button>
-  <button class="btn btn-green" id="popupBtn">🚀 Rewarded Popup</button>
+  <button class="btn btn-interstitial" id="interstitialBtn">🎬 Rewarded Interstitial</button>
+  <button class="btn btn-popup" id="popupBtn">🚀 Rewarded Popup</button>
 
-  <div style="margin-top: 15px; font-size: 13px; color: #aaa;">লাইভ ডায়াগনস্টিক লগ:</div>
-  <div id="diag" class="diag-box">শুরু হচ্ছে...</div>
+  <div id="status">অ্যাপ লোড হচ্ছে...</div>
 </div>
 
 <script>
-  const diag = document.getElementById("diag");
-  const scriptTag = document.getElementById("monetag-script");
+  if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+  }
+
+  const statusEl = document.getElementById("status");
   const coinCountEl = document.getElementById("coinCount");
   const interstitialBtn = document.getElementById("interstitialBtn");
   const popupBtn = document.getElementById("popupBtn");
 
   let coins = 0;
 
-  function dlog(msg) {
+  function log(msg) {
+    statusEl.textContent = msg;
     console.log(msg);
-    const time = new Date().toLocaleTimeString().split(" ")[0];
-    diag.textContent += "\n[" + time + "] " + msg;
-    diag.scrollTop = diag.scrollHeight;
   }
 
-  // স্ক্রিপ্ট লোড ইভেন্ট মনিটর
-  scriptTag.addEventListener("load", function() {
-    dlog("✅ <script src='libtl.com'> নেটওয়ার্ক থেকে সাকসেসফুলি ডাউনলোড হয়েছে!");
-  });
-
-  scriptTag.addEventListener("error", function(e) {
-    dlog("❌ <script src='libtl.com'> ডাউনলোড হতে ফেইল করেছে (Network/Blocked)!");
-  });
-
-  // গ্লোবাল এরর ক্যাচ
-  window.addEventListener("error", function(e) {
-    dlog("⚠️ Script Error: " + (e.message || "Unknown error") + " at " + (e.filename || ""));
-  });
-
-  // টেলিগ্রাম চেক
-  try {
-    if (window.Telegram && window.Telegram.WebApp) {
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
-      dlog("📱 Telegram WebApp Init সম্পন্ন। User ID: " + (window.Telegram.WebApp.initDataUnsafe?.user?.id || "N/A"));
-    } else {
-      dlog("🌐 সাধারণ ব্রাউজারে রানিং (টেলিগ্রাম WebApp পাওয়া যায়নি)");
-    }
-  } catch(e) {
-    dlog("⚠️ Telegram init error: " + e.message);
+  function addReward(amount) {
+    coins += amount;
+    coinCountEl.textContent = coins;
   }
 
-  // SDK ফাংশন রিটার্ন
-  function getAd() {
-    return window.show_9841479 || window["show_9841479"];
-  }
-
+  // ১. Rewarded Interstitial (হুবহু স্ক্রিনশটের কোড)
   interstitialBtn.addEventListener("click", function() {
-    const fn = getAd();
-    if (typeof fn !== "function") {
-      dlog("❌ show_9841479 ফাংশন নেই! টাইপ: " + typeof fn);
+    if (typeof show_9841479 !== "function") {
+      log("❌ show_9841479 ফাংশন পাওয়া যায়নি! SDK লোড হয়নি।");
       return;
     }
-    interstitialBtn.disabled = true;
-    dlog("⏳ Calling show_9841479() [Interstitial]...");
-    
-    fn()
-      .then(function(res) {
-        coins += 10;
-        coinCountEl.textContent = coins;
-        dlog("🎉 Interstitial সাকসেস! Res: " + JSON.stringify(res || "OK"));
+
+    log("বিজ্ঞাপন লোড হচ্ছে, অপেক্ষা করুন...");
+
+    show_9841479()
+      .then(function() {
+        addReward(10);
+        log("✅ বিজ্ঞাপন সফলভাবে দেখা হয়েছে! +১০ কয়েন যোগ হয়েছে।");
         alert("You have seen an ad!");
-        interstitialBtn.disabled = false;
       })
-      .catch(function(err) {
-        dlog("🛑 Interstitial Rejection: " + (err && err.message ? err.message : JSON.stringify(err)));
-        interstitialBtn.disabled = false;
+      .catch(function(e) {
+        console.error("Monetag Interstitial error:", e);
+        log("⚠️ Interstitial এরর: " + (e && e.message ? e.message : JSON.stringify(e)));
       });
   });
 
+  // ২. Rewarded Popup (হুবহু স্ক্রিনশটের কোড)
   popupBtn.addEventListener("click", function() {
-    const fn = getAd();
-    if (typeof fn !== "function") {
-      dlog("❌ show_9841479 ফাংশন নেই!");
+    if (typeof show_9841479 !== "function") {
+      log("❌ show_9841479 ফাংশন পাওয়া যায়নি! SDK লোড হয়নি।");
       return;
     }
-    popupBtn.disabled = true;
-    dlog("⏳ Calling show_9841479('pop') [Popup]...");
-    
-    fn("pop")
-      .then(function(res) {
-        coins += 10;
-        coinCountEl.textContent = coins;
-        dlog("🎉 Popup সাকসেস! Res: " + JSON.stringify(res || "OK"));
-        popupBtn.disabled = false;
+
+    log("পপআপ বিজ্ঞাপন ওপেন হচ্ছে...");
+
+    show_9841479("pop")
+      .then(function() {
+        addReward(10);
+        log("✅ পপআপ সফলভাবে ট্রিগার হয়েছে! +১০ কয়েন যোগ হয়েছে।");
       })
-      .catch(function(err) {
-        dlog("🛑 Popup Rejection: " + (err && err.message ? err.message : JSON.stringify(err)));
-        popupBtn.disabled = false;
+      .catch(function(e) {
+        console.error("Monetag Popup error:", e);
+        log("⚠️ Popup এরর: " + (e && e.message ? e.message : JSON.stringify(e)));
       });
   });
 
-  // পোলিং ও ভেরিফিকেশন
-  let sec = 0;
-  const timer = setInterval(function() {
-    sec++;
-    const fn = getAd();
-    if (typeof fn === "function") {
-      clearInterval(timer);
-      dlog("🎯 SDK সম্পূর্ণ প্রস্তুত! window.show_9841479 পাওয়া গেছে। বাটন চাপুন।");
-    } else if (sec >= 12) {
-      clearInterval(timer);
-      dlog("❌ ১২ সেকেন্ডেও window.show_9841479 পাওয়া যায়নি!");
-      dlog("কারণ যাচাই: স্ক্রিপ্ট ট্যাগ এরর অথবা libtl.com ব্লক।");
-    } else {
-      dlog("চেক করা হচ্ছে (" + sec + "s)... window.show_9841479: " + typeof fn);
-    }
-  }, 1000);
+  // SDK লোড স্ট্যাটাস চেক
+  window.addEventListener("load", function() {
+    setTimeout(function() {
+      if (typeof show_9841479 === "function") {
+        log("✅ Monetag SDK প্রস্তুত! বাটন চাপুন।");
+      } else {
+        log("❌ Monetag SDK লোড হয়নি! (show_9841479 undefined)");
+      }
+    }, 1200);
+  });
 </script>
 
 </body>

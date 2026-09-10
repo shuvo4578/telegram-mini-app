@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Telegram Mini App - Monetag Ads</title>
+<title>Telegram Mini App</title>
 
-<!-- ১. টেলিগ্রাম অফিসিয়াল WebApp SDK -->
+<!-- ১. অফিসিয়াল টেলিগ্রাম Mini App SDK -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- ২. Monetag SDK (https:// সরাসরি উল্লেখ করা নিরাপদ) -->
-<script src="https://libtl.com/sdk.js" data-zone="9841479" data-sdk="show_9841479"></script>
+<!-- ২. Monetag SDK -->
+<script src="//libtl.com/sdk.js" data-zone="9841479" data-sdk="show_9841479"></script>
 
 <style>
   :root { color-scheme: light dark; }
@@ -17,53 +17,38 @@
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--tg-theme-bg-color, #181818);
-    color: var(--tg-theme-text-color, #ffffff);
+    background: var(--tg-theme-bg-color, #ffffff);
+    color: var(--tg-theme-text-color, #000000);
     padding: 20px;
     text-align: center;
   }
-  h2 { margin-top: 10px; margin-bottom: 5px; }
-  .card {
-    background: var(--tg-theme-secondary-bg-color, #242424);
-    border-radius: 16px;
-    padding: 20px;
-    margin: 15px auto;
-    max-width: 360px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  }
-  .coins {
-    font-size: 28px;
-    font-weight: bold;
-    color: #fbbf24;
-    margin: 10px 0 20px 0;
-  }
+  h2 { margin-top: 10px; }
   .btn {
     width: 100%;
+    max-width: 320px;
     padding: 14px;
-    margin: 8px 0;
-    font-size: 15px;
+    margin: 10px 0;
+    font-size: 16px;
     font-weight: 600;
     border: none;
     border-radius: 12px;
+    background: var(--tg-theme-button-color, #2563eb);
+    color: var(--tg-theme-button-text-color, #ffffff);
     cursor: pointer;
-    transition: 0.2s opacity;
   }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-interstitial {
-    background: #3b82f6;
-    color: #ffffff;
-  }
-  .btn-popup {
+  .btn.secondary {
     background: #10b981;
     color: #ffffff;
   }
-  #status-box {
-    margin-top: 15px;
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  #coins { font-size: 24px; font-weight: bold; margin: 15px 0; }
+  #status {
+    margin-top: 20px;
     padding: 12px;
     border-radius: 8px;
-    background: rgba(0,0,0,0.3);
-    font-size: 13px;
-    min-height: 50px;
+    background: rgba(128,128,128,0.1);
+    font-size: 14px;
+    min-height: 45px;
     white-space: pre-wrap;
     word-break: break-word;
   }
@@ -71,45 +56,34 @@
 </head>
 <body>
 
-<div class="card">
-  <h2>🎁 Watch & Earn</h2>
-  <p style="opacity:0.8;font-size:13px;margin:0;">বিজ্ঞাপন দেখে কয়েন সংগ্রহ করুন</p>
+<h2>🎁 Watch & Earn</h2>
+<div id="coins">কয়েন: <span id="coinCount">0</span></div>
 
-  <div class="coins">💰 <span id="coinCount">0</span> কয়েন</div>
+<!-- বাটন ১: Rewarded Interstitial -->
+<button class="btn" id="rewardedBtn">🎬 Rewarded Interstitial</button>
 
-  <!-- Format 1: Rewarded Interstitial -->
-  <button class="btn btn-interstitial" id="interstitialBtn">
-    🎬 Rewarded Interstitial (+10)
-  </button>
+<!-- বাটন ২: Rewarded Popup -->
+<button class="btn secondary" id="popupBtn">🚀 Rewarded Popup</button>
 
-  <!-- Format 2: Rewarded Popup -->
-  <button class="btn btn-popup" id="popupBtn">
-    🚀 Rewarded Popup (+10)
-  </button>
-
-  <div id="status-box">অ্যাপ ও Monetag SDK লোড হচ্ছে...</div>
-</div>
+<div id="status">অ্যাপ লোড হচ্ছে...</div>
 
 <script>
-  // টেলিগ্রাম Mini App শুরু
+  // টেলিগ্রাম WebApp শুরু
   const tg = window.Telegram?.WebApp;
-  let telegramUserId = null;
-
   if (tg) {
     tg.ready();
     tg.expand();
-    telegramUserId = tg.initDataUnsafe?.user?.id || null;
   }
 
-  const statusBox = document.getElementById("status-box");
-  const coinCountEl = document.getElementById("coinCount");
-  const interstitialBtn = document.getElementById("interstitialBtn");
-  const popupBtn = document.getElementById("popupBtn");
+  const statusEl = document.getElementById('status');
+  const coinCountEl = document.getElementById('coinCount');
+  const rewardedBtn = document.getElementById('rewardedBtn');
+  const popupBtn = document.getElementById('popupBtn');
 
   let coins = 0;
 
   function log(msg) {
-    statusBox.textContent = msg;
+    statusEl.textContent = msg;
     console.log(msg);
   }
 
@@ -118,76 +92,64 @@
     coinCountEl.textContent = coins;
   }
 
-  // SDK রেডি আছে কিনা চেক ও Preload
-  function checkAndPreload() {
-    if (typeof show_9841479 === "function") {
-      log("✅ Monetag SDK প্রস্তুত! অ্যাড প্রিলোড হচ্ছে...");
-      
-      // ডকস অনুযায়ী background-এ preload করা
-      show_9841479({ type: "preload", ymid: telegramUserId ? String(telegramUserId) : "tma_user" })
-        .then(() => {
-          log("✅ অ্যাড সফলভাবে প্রিলোড হয়েছে। বাটন চাপুন।");
-        })
-        .catch((err) => {
-          log("ℹ️ প্রিলোড নোটিস: " + (err && err.message ? err.message : "কোনো অ্যাড ফিড নেই"));
-        });
-    } else {
-      log("❌ Ad SDK লোড হয়নি! (AdBlocker/Private DNS বন্ধ করুন বা VPN দিয়ে চেক করুন)");
-    }
-  }
-
-  // ১. Rewarded Interstitial বাটন (Docs অনুযায়ী)
-  interstitialBtn.addEventListener("click", () => {
-    if (typeof show_9841479 !== "function") {
-      log("❌ SDK লোড হয়নি। আপনার ব্রাউজার বা নেটওয়ার্কে AdBlocker আছে।");
+  // ১. Rewarded Interstitial
+  rewardedBtn.addEventListener('click', () => {
+    if (typeof show_9841479 !== 'function') {
+      log('❌ Monetag SDK লোড হয়নি।');
       return;
     }
 
-    interstitialBtn.disabled = true;
-    log("⏳ ইন্টারস্টিশিয়াল বিজ্ঞাপন ওপেন হচ্ছে...");
+    rewardedBtn.disabled = true;
+    log('বিজ্ঞাপন লোড হচ্ছে, অপেক্ষা করুন...');
 
-    show_9841479({ type: "end", ymid: telegramUserId ? String(telegramUserId) : "tma_user" })
-      .then((res) => {
+    show_9841479()
+      .then((result) => {
         addReward(10);
-        log("✅ বিজ্ঞাপন সম্পন্ন! +১০ কয়েন যুক্ত হয়েছে।");
-        alert("অভিনন্দন! আপনি পুরো বিজ্ঞাপন দেখেছেন। +১০ কয়েন পেয়েছেন!");
-        interstitialBtn.disabled = false;
+        log('✅ বিজ্ঞাপন সফলভাবে দেখা হয়েছে! +১০ কয়েন যোগ হয়েছে।');
+        alert('You have seen an ad!');
+        rewardedBtn.disabled = false;
       })
-      .catch((err) => {
-        console.error(err);
-        const errMsg = err && err.message ? err.message : String(err);
-        log("⚠️ Ad Error: " + errMsg);
-        interstitialBtn.disabled = false;
+      .catch((e) => {
+        console.error('Monetag Interstitial error:', e);
+        const errMsg = (e && e.message) ? e.message : String(e);
+        log('⚠️ Interstitial এরর: ' + errMsg);
+        rewardedBtn.disabled = false;
       });
   });
 
-  // ২. Rewarded Popup বাটন (Docs অনুযায়ী)
-  popupBtn.addEventListener("click", () => {
-    if (typeof show_9841479 !== "function") {
-      log("❌ SDK লোড হয়নি। আপনার ব্রাউজার বা নেটওয়ার্কে AdBlocker আছে।");
+  // ২. Rewarded Popup
+  popupBtn.addEventListener('click', () => {
+    if (typeof show_9841479 !== 'function') {
+      log('❌ Monetag SDK লোড হয়নি।');
       return;
     }
 
     popupBtn.disabled = true;
-    log("⏳ পপআপ বিজ্ঞাপন ওপেন হচ্ছে...");
+    log('পপআপ বিজ্ঞাপন লোড হচ্ছে...');
 
-    show_9841479({ type: "pop", ymid: telegramUserId ? String(telegramUserId) : "tma_user" })
-      .then(() => {
+    show_9841479('pop')
+      .then((result) => {
         addReward(10);
-        log("✅ পপআপ সফলভাবে ট্রিগার হয়েছে! +১০ কয়েন যুক্ত হয়েছে।");
+        log('✅ পপআপ বিজ্ঞাপন ট্রিগার হয়েছে! +১০ কয়েন যোগ হয়েছে।');
         popupBtn.disabled = false;
       })
-      .catch((err) => {
-        console.error(err);
-        const errMsg = err && err.message ? err.message : String(err);
-        log("⚠️ Popup Error: " + errMsg);
+      .catch((e) => {
+        console.error('Monetag Popup error:', e);
+        const errMsg = (e && e.message) ? e.message : String(e);
+        log('⚠️ Popup এরর: ' + errMsg);
         popupBtn.disabled = false;
       });
   });
 
-  // পেজ লোড হলে চেক চালানো
-  window.addEventListener("load", () => {
-    setTimeout(checkAndPreload, 1500);
+  // পেজ লোড শেষে SDK ভেরিফিকেশন
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      if (typeof show_9841479 === 'function') {
+        log('✅ Monetag SDK প্রস্তুত। বাটনে ক্লিক করুন।');
+      } else {
+        log('❌ Monetag SDK লোড হয়নি।');
+      }
+    }, 1000);
   });
 </script>
 

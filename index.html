@@ -3,86 +3,113 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>My Telegram Mini App</title>
+<title>Watch & Earn</title>
 
-<!-- ১. টেলিগ্রাম মিনি অ্যাপ অফিসিয়াল SDK -->
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<!-- ২. Monetag SDK -->
+<!-- Monetag SDK (হুবহু আগের সফল পেজের মতো) -->
 <script src='//libtl.com/sdk.js' data-zone='9841479' data-sdk='show_9841479'></script>
 
 <style>
   :root { color-scheme: light dark; }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--tg-theme-bg-color, #ffffff);
-    color: var(--tg-theme-text-color, #000000);
-    padding: 20px;
+    background-color: #121212;
+    color: #ffffff;
+    padding: 24px;
     text-align: center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
-  h2 { margin-top: 10px; }
+  .container {
+    width: 100%;
+    max-width: 360px;
+    background-color: #1e1e1e;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    border: 1px solid #333;
+  }
+  h2 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #ff8c00;
+  }
+  .subtext {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 20px;
+  }
+  .coins-box {
+    background-color: #2c2c2c;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    font-size: 26px;
+    font-weight: bold;
+    color: #ff8c00;
+  }
   .btn {
     width: 100%;
-    max-width: 320px;
-    padding: 14px;
-    margin: 10px 0;
+    padding: 15px;
+    margin: 8px 0;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: bold;
     border: none;
     border-radius: 12px;
-    background: var(--tg-theme-button-color, #2563eb);
-    color: var(--tg-theme-button-text-color, #ffffff);
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: transform 0.1s ease, opacity 0.2s;
   }
-  .btn:active { opacity: 0.85; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn.secondary {
-    background: transparent;
-    border: 1px solid var(--tg-theme-hint-color, #999);
-    color: var(--tg-theme-text-color, #000);
+  .btn:active {
+    transform: scale(0.97);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-popup {
+    background-color: #ff8c00;
+    color: #121212;
+  }
+  .btn-interstitial {
+    background-color: transparent;
+    border: 2px solid #ff8c00;
+    color: #ff8c00;
   }
   #status {
     margin-top: 20px;
-    font-size: 14px;
-    color: var(--tg-theme-hint-color, #666);
-    min-height: 40px;
-    white-space: pre-wrap;
+    font-size: 13px;
+    color: #aaa;
+    min-height: 35px;
     word-break: break-word;
   }
-  #coins { font-size: 22px; font-weight: bold; margin: 10px 0; }
 </style>
 </head>
 <body>
 
-<h2>🎁 Watch & Earn</h2>
-<div id="coins">কয়েন: <span id="coinCount">0</span></div>
+<div class="container">
+  <h2>🎁 Watch & Earn</h2>
+  <p class="subtext">বিজ্ঞাপন দেখে রিওয়ার্ড কয়েন সংগ্রহ করুন</p>
 
-<button class="btn" id="rewardedPopupBtn">বিজ্ঞাপন দেখে রিওয়ার্ড নিন (Popup)</button>
-<button class="btn secondary" id="interstitialBtn">ইন্টারস্টিশিয়াল বিজ্ঞাপন দেখান</button>
+  <div class="coins-box">
+    কয়েন: <span id="coinCount">0</span>
+  </div>
 
-<div id="status">অ্যাপ লোড হচ্ছে...</div>
+  <!-- বাটন ১: Rewarded Popup -->
+  <button class="btn btn-popup" id="popupBtn">বিজ্ঞাপন দেখে রিওয়ার্ড নিন (Popup)</button>
+
+  <!-- বাটন ২: Rewarded Interstitial -->
+  <button class="btn btn-interstitial" id="interstitialBtn">ইন্টারস্টিশিয়াল বিজ্ঞাপন দেখান</button>
+
+  <div id="status">লোড হচ্ছে...</div>
+</div>
 
 <script>
-  // ---------- ৩. টেলিগ্রাম Mini App ইনিশিয়ালাইজেশন ----------
-  try {
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
-  } catch (e) {
-    console.warn("Telegram init:", e);
-  }
-
   const statusEl = document.getElementById('status');
   const coinCountEl = document.getElementById('coinCount');
-  const rewardedBtn = document.getElementById('rewardedPopupBtn');
+  const popupBtn = document.getElementById('popupBtn');
   const interstitialBtn = document.getElementById('interstitialBtn');
 
   let coins = 0;
@@ -97,73 +124,62 @@
     coinCountEl.textContent = coins;
   }
 
-  // SDK ফাংশন চেক
-  function getAd() {
-    return window.show_9841479 || window['show_9841479'];
-  }
-
-  // ---------- ৪. Monetag Rewarded Popup বাটন ----------
-  rewardedBtn.addEventListener('click', () => {
-    const showAd = getAd();
-    if (typeof showAd !== 'function') {
-      log('❌ Ad SDK এখনও রেডি হয়নি। অনুগ্রহ করে ২-৩ সেকেন্ড অপেক্ষা করে আবার চাপুন।');
+  // ১. Rewarded Popup (আগের পেজের হুবহু মেথড)
+  popupBtn.addEventListener('click', () => {
+    if (typeof window.show_9841479 !== 'function') {
+      log('❌ বিজ্ঞাপন লোড হয়নি, একটু অপেক্ষা করে আবার চেষ্টা করুন।');
       return;
     }
 
-    rewardedBtn.disabled = true;
-    log('পপআপ বিজ্ঞাপন লোড হচ্ছে, অপেক্ষা করুন...');
+    popupBtn.disabled = true;
+    log('পপআপ বিজ্ঞাপন ওপেন হচ্ছে...');
 
-    // Mega-Reward এর মতো window.show_9841479('pop') কল
-    showAd('pop')
+    window.show_9841479('pop')
       .then(() => {
-        log('✅ বিজ্ঞাপন সফলভাবে ওপেন হয়েছে। রিওয়ার্ড দেওয়া হলো!');
+        log('✅ বিজ্ঞাপন সম্পন্ন! +১০ কয়েন যোগ হয়েছে।');
         addReward(10);
-        rewardedBtn.disabled = false;
+        popupBtn.disabled = false;
       })
       .catch((e) => {
-        console.error('Monetag error:', e);
-        log('⚠️ এরর: ' + (e && e.message ? e.message : 'Currently not available any ads. Please wait and try again.'));
-        rewardedBtn.disabled = false;
+        console.error('Monetag Popup Error:', e);
+        log('⚠️ কোনো বিজ্ঞাপন পাওয়া যায়নি, একটু পর আবার চেষ্টা করুন।');
+        popupBtn.disabled = false;
       });
   });
 
-  // ---------- ৫. In-App Interstitial বাটন ----------
+  // ২. Rewarded Interstitial (আগের পেজের হুবহু মেথড)
   interstitialBtn.addEventListener('click', () => {
-    const showAd = getAd();
-    if (typeof showAd !== 'function') {
-      log('❌ Ad SDK এখনও রেডি হয়নি।');
+    if (typeof window.show_9841479 !== 'function') {
+      log('❌ বিজ্ঞাপন লোড হয়নি, একটু অপেক্ষা করে আবার চেষ্টা করুন।');
       return;
     }
 
     interstitialBtn.disabled = true;
     log('ইন্টারস্টিশিয়াল বিজ্ঞাপন লোড হচ্ছে...');
 
-    // Mega-Reward এর মতো window.show_9841479() কল
-    showAd()
+    window.show_9841479()
       .then(() => {
-        log('✅ বিজ্ঞাপন দেখানো শেষ হয়েছে। রিওয়ার্ড দেওয়া হলো!');
+        log('✅ বিজ্ঞাপন সম্পন্ন! +৫ কয়েন যোগ হয়েছে।');
         addReward(5);
         interstitialBtn.disabled = false;
       })
       .catch((e) => {
-        console.error('Monetag error:', e);
-        log('⚠️ এরর: ' + (e && e.message ? e.message : 'Currently not available any ads. Please wait and try again.'));
+        console.error('Monetag Interstitial Error:', e);
+        log('⚠️ কোনো বিজ্ঞাপন পাওয়া যায়নি, একটু পর আবার চেষ্টা করুন।');
         interstitialBtn.disabled = false;
       });
   });
 
-  // ---------- ৬. SDK লোড ভেরিফিকেশন ও পোলিং ----------
-  let retrySec = 0;
-  const timer = setInterval(() => {
-    retrySec++;
-    if (typeof getAd() === 'function') {
-      clearInterval(timer);
-      log('✅ অ্যাপ ও Ad SDK সম্পূর্ণ প্রস্তুত!');
-    } else if (retrySec >= 10) {
-      clearInterval(timer);
-      log('⚠️ SDK রেসপন্স পেতে দেরি হচ্ছে। বাটন চাপলে আবার চেষ্টা করা হবে।');
-    }
-  }, 1000);
+  // পেজ লোড হলে চেক
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      if (typeof window.show_9841479 === 'function') {
+        log('✅ রেডি! বাটনে ক্লিক করে বিজ্ঞাপন দেখুন।');
+      } else {
+        log('⚠️ অ্যাড সার্ভিস লোড হতে সময় নিচ্ছে...');
+      }
+    }, 1000);
+  });
 </script>
 
 </body>
